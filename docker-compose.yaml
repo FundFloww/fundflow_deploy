@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:latest
+    container_name: mysql-fundflow
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+    networks:
+      - fundflow-network 
+
+  spring-boot-app:
+    image: fundflow950/fundflow_api:latest
+    ports:
+      - "9000:9000"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_CLOUD_AZURE_STORAGE_BLOB_ACCOUNT_NAME: ${AZURE_STORAGE_ACCOUNT_NAME}
+      SPRING_CLOUD_AZURE_STORAGE_BLOB_ENDPOINT: ${AZURE_STORAGE_ACCOUNT_ENDPOINT}
+      SPRING_CLOUD_AZURE_STORAGE_BLOB_CONNECTION_STRING: ${AZURE_STORAGE_CONNECTION_STRING}
+      SPRING_CLOUD_AZURE_STORAGE_BLOB_CONTAINER_NAME: ${AZURE_STORAGE_CONTAINER_NAME}
+    depends_on:
+      - mysql
+    restart: always
+    networks:
+      - fundflow-network 
+
+  angular-web:
+    image: fundflow950/fundflow_web:latest
+    ports:
+      - "4200:4200"
+    depends_on:
+      - spring-boot-app
+    restart: always
+    networks:
+      - fundflow-network 
+
+networks:
+  fundflow-network:
+    driver: bridge
